@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency Dispatch System - Tumkur</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+        }
+        .header {
+            background-color: #dc3545;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .container {
+            display: flex;
+            padding: 1rem;
+            gap: 1rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .map-container {
+            flex: 2;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        #map {
+            height: 600px;
+            width: 100%;
+        }
+        .control-panel {
+            flex: 1;
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .service-checkboxes {
+            margin-bottom: 1rem;
+        }
+        .service-checkbox {
+            display: block;
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .service-checkbox:hover {
+            background-color: #f8f9fa;
+        }
+        .service-checkbox input {
+            margin-right: 0.5rem;
+        }
+        .selected-services {
+            margin: 1rem 0;
+            padding: 0.5rem;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .vehicle-list {
+            margin-top: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .vehicle-card {
+            border: 1px solid #ddd;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .vehicle-card:hover {
+            background-color: #f8f9fa;
+        }
+        .vehicle-card.selected {
+            background-color: #e3f2fd;
+            border-color: #2196f3;
+        }
+        .status-eta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.5rem;
+            font-size: 0.9em;
+        }
+        .status {
+            color: #666;
+        }
+        .eta {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .eta-info {
+            margin-top: 0.5rem;
+            font-size: 0.9em;
+            color: #666;
+        }
+        .eta-info.available {
+            color: #28a745;
+        }
+        .eta-info.unavailable {
+            color: #dc3545;
+        }
+        .dispatch-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 1rem;
+        }
+        .dispatch-btn:hover {
+            background-color: #c82333;
+        }
+        .dispatch-btn:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .location-info {
+            margin: 1rem 0;
+            padding: 0.5rem;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .phone-input {
+            width: 100%;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .get-location-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+        .get-location-btn:hover {
+            background-color: #218838;
+        }
+        .vehicle-icon {
+            width: 32px;
+            height: 32px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        .ambulance-icon {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23e74c3c"><path d="M18 18.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5 1.5.67 1.5 1.5 1.5zM19 8V5h-3V2H8v3H5v3H2v14h20V8h-3zM10 4h4v2h-4V4zm9 16H5V10h14v10z"/></svg>');
+        }
+        .police-icon {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%233498db"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>');
+        }
+        .fire-icon {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23e67e22"><path d="M12 23c-4.97 0-9-4.03-9-9s4.03-9 9-9 9 4.03 9 9-4.03 9-9 9zm0-16c-3.87 0-7 3.13-7 7s3.13 7 7 7 7-3.13 7-7-3.13-7-7-7z"/></svg>');
+        }
+        .vehicle-marker {
+            transition: all 1s linear;
+        }
+        .route-line {
+            stroke: #3388ff;
+            stroke-width: 4;
+            stroke-opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Emergency Dispatch System - Tumkur</h1>
+    </div>
+    <div class="container">
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+        <div class="control-panel">
+            <input type="tel" id="phoneNumber" class="phone-input" placeholder="Enter phone number" maxlength="10">
+            <button id="getLocationBtn" class="get-location-btn">Get Location</button>
+            
+            <div class="service-checkboxes">
+                <h3>Select Emergency Services</h3>
+                <label class="service-checkbox">
+                    <input type="checkbox" value="AMBULANCE"> Ambulance
+                </label>
+                <label class="service-checkbox">
+                    <input type="checkbox" value="POLICE"> Police
+                </label>
+                <label class="service-checkbox">
+                    <input type="checkbox" value="FIRE"> Fire
+                </label>
+            </div>
+            
+            <div class="selected-services">
+                <h3>Selected Services</h3>
+                <div id="selectedServicesList"></div>
+            </div>
+            
+            <div class="location-info">
+                <h3>Emergency Location</h3>
+                <div id="locationInfo">No location selected</div>
+            </div>
+            
+            <div class="vehicle-list">
+                <h3>Available Vehicles</h3>
+                <div id="vehicleList"></div>
+            </div>
+            
+            <div class="eta-summary" id="etaSummary" style="display: none;">
+                <h3>Estimated Arrival Times</h3>
+                <div id="etaList"></div>
+            </div>
+            
+            <button id="dispatchBtn" class="dispatch-btn" disabled>Dispatch Selected Vehicles</button>
+        </div>
+    </div>
+
+    <script>
+        // Initialize map centered on Tumkur
+        const map = L.map('map').setView([13.3409, 77.1025], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        let emergencyMarker = null;
+        let selectedVehicles = new Set();
+        let vehicles = [];
+        let vehicleEtas = {};
+        let vehicleMarkers = {};
+        let routeLines = {};
+        let routeAnimations = {};
+        let currentPositions = {};
+
+        // Load vehicles
+        function loadVehicles(serviceType = '') {
+            const url = serviceType ? `/api/vehicles?type=${serviceType}` : '/api/vehicles';
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    vehicles = Array.isArray(data) ? data : data.vehicles;
+                    updateVehicleList();
+                });
+        }
+
+        // Initial load
+        loadVehicles();
+
+        function createVehicleMarker(vehicle) {
+            const icon = L.divIcon({
+                className: 'vehicle-marker',
+                html: `<div class="vehicle-icon ${vehicle.type.toLowerCase()}-icon"></div>`,
+                iconSize: [32, 32]
+            });
+
+            const marker = L.marker([vehicle.location.latitude, vehicle.location.longitude], { icon });
+            marker.addTo(map);
+            return marker;
+        }
+
+        function getRouteColor(type) {
+            switch(type) {
+                case 'AMBULANCE':
+                    return '#e74c3c'; // Red for ambulances
+                case 'POLICE':
+                    return '#3498db'; // Blue for police
+                case 'FIRE':
+                    return '#e67e22'; // Orange for fire
+                default:
+                    return '#2ecc71'; // Green for others
+            }
+        }
+
+        function getRoute(start, end) {
+            return fetch(`https://router.project-osrm.org/route/v1/driving/${start[1]},${start[0]};${end[1]},${end[0]}?overview=full&geometries=geojson`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.routes && data.routes[0]) {
+                        return data.routes[0];
+                    }
+                    throw new Error('No route found');
+                });
+        }
+
+        function animateVehicle(vehicleId, route) {
+            if (routeAnimations[vehicleId]) {
+                clearInterval(routeAnimations[vehicleId]);
+            }
+
+            const coordinates = route.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+            let currentIndex = 0;
+            const marker = vehicleMarkers[vehicleId];
+            const vehicle = vehicles.find(v => v.id === vehicleId);
+            const routeColor = getRouteColor(vehicle.type);
+            
+            const line = L.polyline(coordinates, { 
+                className: 'route-line',
+                color: routeColor,
+                weight: 6,
+                opacity: 0.8,
+                dashArray: '5, 10'
+            }).addTo(map);
+
+            routeLines[vehicleId] = line;
+            currentPositions[vehicleId] = coordinates[0];
+
+            routeAnimations[vehicleId] = setInterval(() => {
+                if (currentIndex < coordinates.length - 1) {
+                    currentIndex++;
+                    const newPos = coordinates[currentIndex];
+                    marker.setLatLng(newPos);
+                    currentPositions[vehicleId] = newPos;
+
+                    // Update ETA based on remaining distance
+                    const remainingCoords = coordinates.slice(currentIndex);
+                    const remainingDistance = calculateRemainingDistance(remainingCoords);
+                    const remainingTime = Math.ceil(remainingDistance / (60 / 60)); // 60 km/h speed
+                    
+                    if (vehicle) {
+                        vehicle.eta = `${remainingTime} mins`;
+                        updateVehicleList();
+                    }
+                } else {
+                    clearInterval(routeAnimations[vehicleId]);
+                    // Vehicle reached destination
+                    if (vehicle) {
+                        vehicle.status = 'ARRIVED';
+                        vehicle.eta = 'Arrived';
+                        updateVehicleList();
+                    }
+                }
+            }, 1000); // Update every second
+        }
+
+        function calculateRemainingDistance(coordinates) {
+            let distance = 0;
+            for (let i = 0; i < coordinates.length - 1; i++) {
+                const start = L.latLng(coordinates[i]);
+                const end = L.latLng(coordinates[i + 1]);
+                distance += start.distanceTo(end);
+            }
+            return distance / 1000; // Convert to kilometers
+        }
+
+        async function dispatchVehicles() {
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            if (!phoneNumber || !emergencyMarker) return;
+
+            const destination = [
+                emergencyMarker.getLatLng().lat,
+                emergencyMarker.getLatLng().lng
+            ];
+
+            for (const vehicleId of selectedVehicles) {
+                const vehicle = vehicles.find(v => v.id === vehicleId);
+                if (!vehicle) continue;
+
+                try {
+                    const start = [vehicle.location.latitude, vehicle.location.longitude];
+                    const route = await getRoute(start, destination);
+                    
+                    // Create marker if it doesn't exist
+                    if (!vehicleMarkers[vehicleId]) {
+                        vehicleMarkers[vehicleId] = createVehicleMarker(vehicle);
+                    }
+
+                    // Start animation
+                    animateVehicle(vehicleId, route);
+
+                    // Update vehicle status
+                    vehicle.status = 'EN_ROUTE';
+                    vehicle.available = false;
+
+                    // Send dispatch request to server
+                    fetch('/api/dispatch', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            vehicle_id: vehicleId,
+                            phone: phoneNumber
+                        })
+                    });
+                } catch (error) {
+                    console.error('Error calculating route:', error);
+                }
+            }
+
+            selectedVehicles.clear();
+            updateVehicleList();
+            updateDispatchButton();
+        }
+
+        // Update vehicle list based on selected services
+        function updateVehicleList() {
+            const selectedTypes = Array.from(document.querySelectorAll('.service-checkboxes input:checked'))
+                .map(cb => cb.value);
+            
+            const vehicleList = document.getElementById('vehicleList');
+            vehicleList.innerHTML = '';
+            
+            vehicles.forEach(vehicle => {
+                if (selectedTypes.includes(vehicle.type)) {
+                    const card = document.createElement('div');
+                    card.className = 'vehicle-card';
+                    if (selectedVehicles.has(vehicle.id)) {
+                        card.classList.add('selected');
+                    }
+                    card.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="vehicle-icon ${vehicle.type.toLowerCase()}-icon"></div>
+                            <div style="flex-grow: 1;">
+                                <div style="font-size: 1.2em; font-weight: bold; color: #2c3e50;">${vehicle.name}</div>
+                                <div style="color: #7f8c8d;">Type: ${vehicle.type}</div>
+                                <div style="color: #7f8c8d;">Status: ${vehicle.status}</div>
+                                <div class="status-eta">
+                                    <span class="status" style="color: ${vehicle.available ? '#27ae60' : '#e74c3c'}">
+                                        ${vehicle.available ? 'Available' : 'En Route'}
+                                    </span>
+                                    <span class="eta" style="color: #2980b9; font-weight: bold;">
+                                        ${vehicle.eta || 'N/A'}
+                                    </span>
+                                </div>
+                                ${vehicle.distance ? 
+                                    `<div style="color: #8e44ad; margin-top: 5px;">
+                                        Distance: ${vehicle.distance} km
+                                    </div>` : ''}
+                                <div style="color: #7f8c8d; margin-top: 5px;">
+                                    Services: ${vehicle.services.join(', ')}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    card.addEventListener('click', () => {
+                        card.classList.toggle('selected');
+                        if (card.classList.contains('selected')) {
+                            selectedVehicles.add(vehicle.id);
+                        } else {
+                            selectedVehicles.delete(vehicle.id);
+                        }
+                        updateDispatchButton();
+                    });
+                    vehicleList.appendChild(card);
+                }
+            });
+            
+            updateDispatchButton();
+            if (emergencyMarker) {
+                calculateEtas();
+            }
+        }
+
+        function updateDispatchButton() {
+            const dispatchBtn = document.getElementById('dispatchBtn');
+            dispatchBtn.disabled = selectedVehicles.size === 0 || !emergencyMarker;
+        }
+
+        function calculateEtas() {
+            if (!emergencyMarker || selectedVehicles.size === 0) {
+                return;
+            }
+
+            const location = emergencyMarker.getLatLng();
+            console.log('Calculating ETAs for location:', location);
+            console.log('Selected vehicles:', Array.from(selectedVehicles));
+
+            fetch('/api/calculate-etas', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    location: { lat: location.lat, lng: location.lng },
+                    vehicleIds: Array.from(selectedVehicles)
+                })
+            })
+            .then(response => {
+                console.log('ETA response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('ETA response data:', data);
+                if (data.etas) {
+                    vehicleEtas = {};
+                    data.etas.forEach(eta => {
+                        vehicleEtas[eta.vehicleId] = eta;
+                        const etaElement = document.getElementById(`eta-${eta.vehicleId}`);
+                        if (etaElement) {
+                            etaElement.textContent = `ETA: ${eta.etaMinutes} min (${eta.distance} km)`;
+                            console.log(`Updated ETA for ${eta.vehicleId}:`, eta);
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error calculating ETAs:', error);
+            });
+        }
+
+        // Handle service selection
+        document.querySelectorAll('.service-checkbox input').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const selectedServices = Array.from(document.querySelectorAll('.service-checkbox input:checked'))
+                    .map(cb => cb.value);
+                
+                // Update selected services display
+                const selectedServicesList = document.getElementById('selectedServicesList');
+                selectedServicesList.innerHTML = selectedServices.length ? 
+                    selectedServices.join(', ') : 'No services selected';
+                
+                // Load vehicles for the selected service
+                if (selectedServices.length === 1) {
+                    loadVehicles(selectedServices[0]);
+                } else {
+                    loadVehicles();
+                }
+            });
+        });
+
+        // Handle location selection
+        document.getElementById('getLocationBtn').addEventListener('click', () => {
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            if (phoneNumber.length === 10) {
+                console.log('Getting location for phone:', phoneNumber);
+                fetch(`/api/location/${phoneNumber}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Location data:', data);
+                        if (data.location) {
+                            if (emergencyMarker) {
+                                map.removeLayer(emergencyMarker);
+                            }
+                            emergencyMarker = L.marker([data.location.lat, data.location.lng]).addTo(map);
+                            map.setView([data.location.lat, data.location.lng], 15);
+                            document.getElementById('locationInfo').textContent = data.address;
+                            updateDispatchButton();
+                            calculateEtas();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error getting location:', error);
+                    });
+            }
+        });
+
+        // Update the dispatch button click handler
+        document.getElementById('dispatchBtn').addEventListener('click', dispatchVehicles);
+    </script>
+</body>
+</html> 

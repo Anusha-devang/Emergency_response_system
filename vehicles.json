@@ -1,0 +1,64 @@
+{
+  "vehicles": [
+    {
+      "id": "AMB1",
+      "name": "Ambulance 1",
+      "type": "AMBULANCE",
+      "location": {
+        "latitude": 13.3409,
+        "longitude": 77.1025
+      },
+      "services": ["medical"]
+    },
+    {
+      "id": "AMB2",
+      "name": "Ambulance 2",
+      "type": "AMBULANCE",
+      "location": {
+        "latitude": 13.3420,
+        "longitude": 77.1030
+      },
+      "services": ["medical"]
+    },
+    {
+      "id": "AMB3",
+      "name": "Ambulance 3",
+      "type": "AMBULANCE",
+      "location": {
+        "latitude": 13.3430,
+        "longitude": 77.1040
+      },
+      "services": ["medical"]
+    },
+    {
+      "id": "POL1",
+      "name": "Police Vehicle 1",
+      "type": "POLICE",
+      "location": {
+        "latitude": 13.3415,
+        "longitude": 77.1030
+      },
+      "services": ["security"]
+    },
+    {
+      "id": "POL2",
+      "name": "Police Vehicle 2",
+      "type": "POLICE",
+      "location": {
+        "latitude": 13.3425,
+        "longitude": 77.1045
+      },
+      "services": ["security"]
+    },
+    {
+      "id": "FIR1",
+      "name": "Fire Truck 1",
+      "type": "FIRE",
+      "location": {
+        "latitude": 13.3440,
+        "longitude": 77.1050
+      },
+      "services": ["fire"]
+    }
+  ]
+}

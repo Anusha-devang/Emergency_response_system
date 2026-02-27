@@ -1,0 +1,12 @@
+{
+  "requests": [
+    {
+      "location": {
+        "lat": 13.3415,
+        "lng": 77.103
+      },
+      "assignedVehicleIds": ["POL1"],
+      "timestamp": "2025-06-15T06:13:16.734Z"
+    }
+  ]
+}
